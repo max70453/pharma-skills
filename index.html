@@ -20,7 +20,7 @@
         <li class="admin-only"><a href="courses.html"><i class="fa fa-book"></i> Курсы</a></li>
         <li><a href="my-courses.html"><i class="fa fa-graduation-cap"></i> Мои курсы</a></li>
         <li class="admin-only"><a href="tests.html"><i class="fa fa-clipboard"></i> Тесты</a></li>
-        <li><a href="results.html"><i class="fa fa-chart-bar"></i> Результаты</a></li>
+        <li class="admin-only"><a href="results.html"><i class="fa fa-chart-bar"></i> Результаты</a></li>
       </ul>
     </nav>
     <div class="main-content">
@@ -34,15 +34,15 @@
       <main class="content">
         <div class="container-fluid">
           <div class="d-flex justify-content-between align-items-center mb-4">
-            <h1>Дашборд</h1>
+            <h1 id="dashboardTitle">Дашборд</h1>
             <button class="btn btn-danger admin-only" onclick="resetData()"><i class="fa fa-refresh"></i> Сбросить данные</button>
           </div>
           <div class="stats-grid">
             <div class="stat-card">
-              <div class="stat-icon"><i class="fa fa-users"></i></div>
+              <div class="stat-icon"><i class="fa fa-graduation-cap"></i></div>
               <div class="stat-info">
                 <h3 id="totalPharmacists">0</h3>
-                <p>Фармацевтов</p>
+                <p id="pharmacistsLabel">Фармацевтов</p>
               </div>
             </div>
             <div class="stat-card">

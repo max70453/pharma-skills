@@ -76,8 +76,28 @@ function hideAdminElements() {
     if (li) li.style.display = 'none';
   });
   
+  const resultsLinks = document.querySelectorAll('a[href="results.html"]');
+  resultsLinks.forEach(link => {
+    const li = link.closest('li');
+    if (li) li.style.display = 'none';
+  });
+  
   const addButtons = document.querySelectorAll('button[onclick="openAddModal()"], button[onclick="openAddCourseModal()"], button[onclick="openAddTestModal()"]');
   addButtons.forEach(btn => btn.style.display = 'none');
+}
+
+function hideMyCoursesForAdmin() {
+  const myCoursesLinks = document.querySelectorAll('a[href="my-courses.html"]');
+  myCoursesLinks.forEach(link => {
+    const li = link.closest('li');
+    if (li) li.style.display = 'none';
+  });
+  
+  const resultsLinks = document.querySelectorAll('a[href="results.html"]');
+  resultsLinks.forEach(link => {
+    const li = link.closest('li');
+    if (li) li.style.display = 'none';
+  });
 }
 
 function resetData() {
@@ -110,32 +130,78 @@ function loadDashboard() {
   const courses = getData(STORAGE_KEYS.COURSES) || [];
   const tests = getData(STORAGE_KEYS.TESTS) || [];
   const results = getData(STORAGE_KEYS.RESULTS) || [];
+  const currentUser = getData(STORAGE_KEYS.CURRENT_USER);
   
-  document.getElementById('totalPharmacists').textContent = pharmacists.length;
-  document.getElementById('totalCourses').textContent = courses.length;
-  document.getElementById('totalTests').textContent = tests.length;
-  document.getElementById('completedTests').textContent = results.filter(r => r.status === 'passed').length;
+  const isPharmacist = currentUser && currentUser.role === 'pharmacist';
+  const userId = currentUser ? currentUser.id : null;
   
-  const recentResults = results.slice(-5).reverse();
-  const recentResultsEl = document.getElementById('recentResults');
+  const titleEl = document.querySelector('#dashboardTitle');
+  if (titleEl) {
+    titleEl.textContent = isPharmacist ? 'Мой дашборд' : 'Дашборд';
+  }
   
-  if (recentResults.length > 0) {
-    recentResultsEl.innerHTML = recentResults.map(result => {
-      const pharmacist = pharmacists.find(p => p.id === result.pharmacistId);
-      const test = tests.find(t => t.id === result.testId);
-      const scoreClass = result.status === 'passed' ? 'pass' : 'fail';
-      return `
-        <div class="list-item">
-          <div class="info">
-            <h4>${pharmacist ? pharmacist.name : 'Неизвестно'}</h4>
-            <p>${test ? test.title : 'Неизвестно'}</p>
+  const labelEl = document.getElementById('pharmacistsLabel');
+  if (labelEl) {
+    labelEl.textContent = isPharmacist ? 'Мои курсы' : 'Фармацевтов';
+  }
+  
+  if (isPharmacist) {
+    const myResults = results.filter(r => r.pharmacistId === userId);
+    const myPassedTests = myResults.filter(r => r.status === 'passed');
+    
+    document.getElementById('totalPharmacists').textContent = '1';
+    document.getElementById('totalCourses').textContent = courses.length;
+    document.getElementById('totalTests').textContent = tests.length;
+    document.getElementById('completedTests').textContent = myPassedTests.length;
+    
+    const myRecentResults = myResults.slice(-5).reverse();
+    const recentResultsEl = document.getElementById('recentResults');
+    
+    if (myRecentResults.length > 0) {
+      recentResultsEl.innerHTML = myRecentResults.map(result => {
+        const pharmacist = pharmacists.find(p => p.id === result.pharmacistId);
+        const test = tests.find(t => t.id === result.testId);
+        const scoreClass = result.status === 'passed' ? 'pass' : 'fail';
+        return `
+          <div class="list-item">
+            <div class="info">
+              <h4>${test ? test.title : 'Неизвестно'}</h4>
+              <p>${result.date}</p>
+            </div>
+            <div class="score ${scoreClass}">${result.score}%</div>
           </div>
-          <div class="score ${scoreClass}">${result.score}%</div>
-        </div>
-      `;
-    }).join('');
+        `;
+      }).join('');
+    } else {
+      recentResultsEl.innerHTML = '<div class="empty-state"><p>Нет результатов</p></div>';
+    }
   } else {
-    recentResultsEl.innerHTML = '<div class="empty-state"><p>Нет результатов</p></div>';
+    document.getElementById('totalPharmacists').textContent = pharmacists.length;
+    document.getElementById('totalCourses').textContent = courses.length;
+    document.getElementById('totalTests').textContent = tests.length;
+    document.getElementById('completedTests').textContent = results.filter(r => r.status === 'passed').length;
+    
+    const recentResults = results.slice(-5).reverse();
+    const recentResultsEl = document.getElementById('recentResults');
+    
+    if (recentResults.length > 0) {
+      recentResultsEl.innerHTML = recentResults.map(result => {
+        const pharmacist = pharmacists.find(p => p.id === result.pharmacistId);
+        const test = tests.find(t => t.id === result.testId);
+        const scoreClass = result.status === 'passed' ? 'pass' : 'fail';
+        return `
+          <div class="list-item">
+            <div class="info">
+              <h4>${pharmacist ? pharmacist.name : 'Неизвестно'}</h4>
+              <p>${test ? test.title : 'Неизвестно'}</p>
+            </div>
+            <div class="score ${scoreClass}">${result.score}%</div>
+          </div>
+        `;
+      }).join('');
+    } else {
+      recentResultsEl.innerHTML = '<div class="empty-state"><p>Нет результатов</p></div>';
+    }
   }
   
   const popularCourses = courses.slice(0, 5);
@@ -509,6 +575,7 @@ window.switchRole = function(role) {
 
 window.isAdmin = isAdmin;
 window.hideAdminElements = hideAdminElements;
+window.hideMyCoursesForAdmin = hideMyCoursesForAdmin;
 
 document.addEventListener('DOMContentLoaded', function() {
   initStorage();
@@ -518,7 +585,9 @@ document.addEventListener('DOMContentLoaded', function() {
     window.location.href = 'login.html';
   }
   
-  if (!isAdmin()) {
+  if (isAdmin()) {
+    hideMyCoursesForAdmin();
+  } else {
     hideAdminElements();
   }
   
