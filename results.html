@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Результаты - PharmaSkills</title>
+  <link rel="stylesheet" href="css/bootstrap.css">
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/font-awesome.min.css">
+</head>
+<body>
+  <div class="wrapper">
+    <nav class="sidebar">
+      <div class="sidebar-header">
+        <h3>PharmaSkills</h3>
+      </div>
+      <ul class="nav-menu">
+        <li><a href="index.html"><i class="fa fa-home"></i> Главная</a></li>
+        <li class="admin-only"><a href="pharmacists.html"><i class="fa fa-users"></i> Фармацевты</a></li>
+        <li class="admin-only"><a href="courses.html"><i class="fa fa-book"></i> Курсы</a></li>
+        <li><a href="my-courses.html"><i class="fa fa-graduation-cap"></i> Мои курсы</a></li>
+        <li class="admin-only"><a href="tests.html"><i class="fa fa-clipboard"></i> Тесты</a></li>
+        <li class="active"><a href="results.html"><i class="fa fa-chart-bar"></i> Результаты</a></li>
+      </ul>
+    </nav>
+    <div class="main-content">
+      <header class="topbar">
+        <button class="menu-toggle"><i class="fa fa-bars"></i></button>
+        <div class="user-info">
+          <span id="currentUser">Администратор</span>
+          <button id="logoutBtn" class="btn-logout"><i class="fa fa-sign-out"></i> Выход</button>
+        </div>
+      </header>
+      <main class="content">
+        <div class="container-fluid">
+          <h1>Результаты тестирования</h1>
+          <div class="card">
+            <div class="card-body">
+              <div class="table-wrapper">
+                <table class="table" id="resultsTable">
+                  <thead>
+                    <tr>
+                      <th>Фармацевт</th>
+                      <th>Тест</th>
+                      <th>Балл</th>
+                      <th>Дата</th>
+                      <th class="status-col">Статус</th>
+                    </tr>
+                  </thead>
+                  <tbody id="resultsTableBody"></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+  <script src="js/jquery-3.4.1.min.js"></script>
+  <script src="js/bootstrap.js"></script>
+  <script src="js/main.js"></script>
+</body>
+</html>

@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Курсы - PharmaSkills</title>
+  <link rel="stylesheet" href="css/bootstrap.css">
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/font-awesome.min.css">
+</head>
+<body>
+  <div class="wrapper">
+    <nav class="sidebar">
+      <div class="sidebar-header">
+        <h3>PharmaSkills</h3>
+      </div>
+      <ul class="nav-menu">
+        <li><a href="index.html"><i class="fa fa-home"></i> Главная</a></li>
+        <li class="admin-only"><a href="pharmacists.html"><i class="fa fa-users"></i> Фармацевты</a></li>
+        <li class="active"><a href="courses.html"><i class="fa fa-book"></i> Курсы</a></li>
+        <li><a href="my-courses.html"><i class="fa fa-graduation-cap"></i> Мои курсы</a></li>
+        <li class="admin-only"><a href="tests.html"><i class="fa fa-clipboard"></i> Тесты</a></li>
+        <li><a href="results.html"><i class="fa fa-chart-bar"></i> Результаты</a></li>
+      </ul>
+    </nav>
+    <div class="main-content">
+      <header class="topbar">
+        <button class="menu-toggle"><i class="fa fa-bars"></i></button>
+        <div class="user-info">
+          <span id="currentUser">Администратор</span>
+          <button id="logoutBtn" class="btn-logout"><i class="fa fa-sign-out"></i> Выход</button>
+        </div>
+      </header>
+      <main class="content">
+        <div class="container-fluid">
+          <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1>Курсы</h1>
+            <button class="btn btn-primary" onclick="openAddCourseModal()"><i class="fa fa-plus"></i> Добавить</button>
+          </div>
+          <div class="card">
+            <div class="card-body">
+              <div class="table-wrapper">
+                <table class="table" id="coursesTable">
+                  <thead>
+                    <tr>
+                      <th>Название</th>
+                      <th>Категория</th>
+                      <th>Длительность</th>
+                      <th>Описание</th>
+                      <th class="status-col">Статус</th>
+                      <th class="actions-col">Действия</th>
+                    </tr>
+                  </thead>
+                  <tbody id="coursesTableBody"></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+  <div id="editCourseModal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>Редактировать курс</h2>
+        <button class="modal-close" onclick="closeModal('editCourseModal')">&times;</button>
+      </div>
+      <form onsubmit="event.preventDefault(); updateCourse();">
+        <input type="hidden" id="editCourseId">
+        <div class="form-group">
+          <label>Название</label>
+          <input type="text" class="form-control" id="editTitle" required>
+        </div>
+        <div class="form-group">
+          <label>Категория</label>
+          <input type="text" class="form-control" id="editCategory" required>
+        </div>
+        <div class="form-group">
+          <label>Длительность (часы)</label>
+          <input type="number" class="form-control" id="editDuration" required>
+        </div>
+        <div class="form-group">
+          <label>Описание</label>
+          <textarea class="form-control" id="editDescription" rows="3"></textarea>
+        </div>
+        <button type="submit" class="btn btn-primary">Сохранить</button>
+        <button type="button" class="btn btn-danger" onclick="closeModal('editCourseModal')">Отмена</button>
+      </form>
+    </div>
+  </div>
+  <script src="js/jquery-3.4.1.min.js"></script>
+  <script src="js/bootstrap.js"></script>
+  <script src="js/main.js"></script>
+</body>
+</html>

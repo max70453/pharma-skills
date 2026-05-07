@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Вход - PharmaSkills</title>
+  <link rel="stylesheet" href="css/bootstrap.css">
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/font-awesome.min.css">
+</head>
+<body>
+  <div class="login-wrapper">
+    <div class="login-left">
+      <h1>PharmaSkills</h1>
+      <p>Корпоративный портал обучения и оценки навыков фармацевтов</p>
+    </div>
+    <div class="login-right">
+      <h2>Вход в систему</h2>
+      <p>Введите ваши учетные данные</p>
+      <form id="loginForm">
+        <div class="form-group">
+          <label>Выберите роль</label>
+          <select class="form-control" id="loginRole" onchange="togglePharmacistSelect()" style="background-color: #fff; color: #000; height: 45px;">
+            <option value="admin">Администратор</option>
+            <option value="pharmacist">Фармацевт</option>
+          </select>
+        </div>
+        <div class="form-group" id="pharmacistSelectGroup" style="display:none;">
+          <label>Выберите фармацевта</label>
+          <select class="form-control" id="pharmacistSelect" onchange="console.log('Selected: ' + this.value)" style="background-color: #fff; color: #000; height: 45px;">
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Email</label>
+          <input type="email" class="form-control" id="loginEmail" required>
+        </div>
+        <div class="form-group">
+          <label>Пароль</label>
+          <input type="password" class="form-control" id="loginPassword" required>
+        </div>
+        <button type="submit" class="btn btn-primary">Войти</button>
+      </form>
+    </div>
+  </div>
+  <script src="js/jquery-3.4.1.min.js"></script>
+  <script src="js/bootstrap.js"></script>
+  <script>
+    const defaultPharmacists = [
+      { id: 1, name: 'Иванов Иван Иванович', email: 'ivanov@pharmacy.ru' },
+      { id: 2, name: 'Петрова Анна Сергеевна', email: 'petrova@pharmacy.ru' },
+      { id: 3, name: 'Сидоров Алексей Петрович', email: 'sidorov@pharmacy.ru' },
+      { id: 4, name: 'Козлова Мария Дмитриевна', email: 'kozlova@pharmacy.ru' },
+      { id: 5, name: 'Смирнов Дмитрий Олегович', email: 'smirnov@pharmacy.ru' }
+    ];
+    
+    let allPharmacists = defaultPharmacists;
+    
+    var storedData = localStorage.getItem('pharmacists');
+    if (storedData) {
+      try {
+        var parsed = JSON.parse(storedData);
+        if (parsed && parsed.length > 0) {
+          allPharmacists = parsed;
+        }
+      } catch(e) {}
+    }
+    
+    function togglePharmacistSelect() {
+      var role = document.getElementById('loginRole').value;
+      var pharmacistSelectGroup = document.getElementById('pharmacistSelectGroup');
+      var select = document.getElementById('pharmacistSelect');
+      
+      if (role === 'pharmacist') {
+        pharmacistSelectGroup.style.display = 'block';
+        select.innerHTML = '';
+        for (var i = 0; i < allPharmacists.length; i++) {
+          var p = allPharmacists[i];
+          var option = document.createElement('option');
+          option.value = p.id;
+          option.text = p.name;
+          select.appendChild(option);
+        }
+      } else {
+        pharmacistSelectGroup.style.display = 'none';
+      }
+    }
+    
+    document.addEventListener('DOMContentLoaded', function() {
+      console.log('Page loaded, calling togglePharmacistSelect');
+      togglePharmacistSelect();
+    });
+    
+    document.getElementById('loginForm').addEventListener('submit', function(e) {
+      e.preventDefault();
+      var role = document.getElementById('loginRole').value;
+      var email = document.getElementById('loginEmail').value;
+      var select = document.getElementById('pharmacistSelect');
+      var pharmacistId = select && select.options[select.selectedIndex] ? parseInt(select.options[select.selectedIndex].value) : 1;
+      
+      var user;
+      if (role === 'admin') {
+        user = {
+          id: 1,
+          name: 'Администратор',
+          role: 'admin',
+          email: email
+        };
+      } else {
+        var pharmacist = null;
+        for (var i = 0; i < allPharmacists.length; i++) {
+          if (allPharmacists[i].id == pharmacistId) {
+            pharmacist = allPharmacists[i];
+            break;
+          }
+        }
+        user = {
+          id: pharmacistId,
+          name: pharmacist ? pharmacist.name : 'Фармацевт',
+          role: 'pharmacist',
+          email: email
+        };
+      }
+      
+      localStorage.setItem('currentUser', JSON.stringify(user));
+      window.location.href = 'index.html';
+    });
+  </script>
+</body>
+</html>

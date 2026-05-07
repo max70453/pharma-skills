@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title> PharmaSkills - Портал обучения фармацевтов </title>
+  <link rel="stylesheet" href="css/bootstrap.css">
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/font-awesome.min.css">
+</head>
+<body>
+  <div class="wrapper">
+    <nav class="sidebar">
+      <div class="sidebar-header">
+        <h3>PharmaSkills</h3>
+      </div>
+<ul class="nav-menu">
+        <li><a href="index.html"><i class="fa fa-home"></i> Главная</a></li>
+        <li class="admin-only"><a href="pharmacists.html"><i class="fa fa-users"></i> Фармацевты</a></li>
+        <li class="admin-only"><a href="courses.html"><i class="fa fa-book"></i> Курсы</a></li>
+        <li><a href="my-courses.html"><i class="fa fa-graduation-cap"></i> Мои курсы</a></li>
+        <li class="admin-only"><a href="tests.html"><i class="fa fa-clipboard"></i> Тесты</a></li>
+        <li><a href="results.html"><i class="fa fa-chart-bar"></i> Результаты</a></li>
+      </ul>
+    </nav>
+    <div class="main-content">
+      <header class="topbar">
+        <button class="menu-toggle"><i class="fa fa-bars"></i></button>
+        <div class="user-info">
+          <span id="currentUser">Администратор</span>
+          <button id="logoutBtn" class="btn-logout"><i class="fa fa-sign-out"></i> Выход</button>
+        </div>
+      </header>
+      <main class="content">
+        <div class="container-fluid">
+          <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1>Дашборд</h1>
+            <button class="btn btn-danger admin-only" onclick="resetData()"><i class="fa fa-refresh"></i> Сбросить данные</button>
+          </div>
+          <div class="stats-grid">
+            <div class="stat-card">
+              <div class="stat-icon"><i class="fa fa-users"></i></div>
+              <div class="stat-info">
+                <h3 id="totalPharmacists">0</h3>
+                <p>Фармацевтов</p>
+              </div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-icon"><i class="fa fa-book"></i></div>
+              <div class="stat-info">
+                <h3 id="totalCourses">0</h3>
+                <p>Курсов</p>
+              </div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-icon"><i class="fa fa-clipboard"></i></div>
+              <div class="stat-info">
+                <h3 id="totalTests">0</h3>
+                <p>Тестов</p>
+              </div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-icon"><i class="fa fa-check-circle"></i></div>
+              <div class="stat-info">
+                <h3 id="completedTests">0</h3>
+                <p>Пройдено тестов</p>
+              </div>
+            </div>
+          </div>
+          <div class="row mt-4">
+            <div class="col-md-6">
+              <div class="card">
+                <div class="card-header">
+                  <h3>Последние результаты</h3>
+                </div>
+                <div class="card-body">
+                  <div id="recentResults" class="recent-list"></div>
+                </div>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="card">
+                <div class="card-header">
+                  <h3>Популярные курсы</h3>
+                </div>
+                <div class="card-body">
+                  <div id="popularCourses" class="course-list"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+  <script src="js/jquery-3.4.1.min.js"></script>
+  <script src="js/bootstrap.js"></script>
+  <script src="js/main.js"></script>
+</body>
+</html>

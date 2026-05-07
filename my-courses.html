@@ -1,0 +1,562 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Мои курсы - PharmaSkills</title>
+  <link rel="stylesheet" href="css/bootstrap.css">
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/font-awesome.min.css">
+</head>
+<body>
+  <div class="wrapper">
+    <nav class="sidebar">
+      <div class="sidebar-header">
+        <h3>PharmaSkills</h3>
+      </div>
+      <ul class="nav-menu">
+        <li><a href="index.html"><i class="fa fa-home"></i> Главная</a></li>
+        <li class="admin-only"><a href="pharmacists.html"><i class="fa fa-users"></i> Фармацевты</a></li>
+        <li class="admin-only"><a href="courses.html"><i class="fa fa-book"></i> Курсы</a></li>
+        <li class="active"><a href="my-courses.html"><i class="fa fa-graduation-cap"></i> Мои курсы</a></li>
+        <li class="admin-only"><a href="tests.html"><i class="fa fa-clipboard"></i> Тесты</a></li>
+        <li><a href="results.html"><i class="fa fa-chart-bar"></i> Результаты</a></li>
+      </ul>
+    </nav>
+    <div class="main-content">
+      <header class="topbar">
+        <button class="menu-toggle"><i class="fa fa-bars"></i></button>
+        <div class="user-info">
+          <span id="currentUser">Администратор</span>
+          <button id="logoutBtn" class="btn-logout"><i class="fa fa-sign-out"></i> Выход</button>
+        </div>
+      </header>
+      <main class="content">
+        <div class="container-fluid">
+          <div id="coursesView">
+            <h1>Мои курсы</h1>
+            <div class="tabs">
+              <button class="tab-btn active" data-tab="available">Доступные курсы</button>
+              <button class="tab-btn" data-tab="enrolled">Мои курсы</button>
+            </div>
+            
+            <div id="availableTab" class="tab-content">
+              <div id="availableCourses" class="course-grid"></div>
+            </div>
+            
+            <div id="enrolledTab" class="tab-content hidden">
+              <div id="enrolledCourses" class="course-grid"></div>
+            </div>
+          </div>
+          
+          <div id="lessonView" class="hidden">
+            <div class="lesson-header">
+              <button class="btn btn-secondary" onclick="backToCourses()"><i class="fa fa-arrow-left"></i> Назад</button>
+              <h2 id="lessonCourseTitle"></h2>
+              <div class="lesson-progress">
+                <span>Прогресс: <span id="lessonProgress">0</span>%</span>
+              </div>
+            </div>
+            <div class="lesson-content-wrapper">
+              <div class="lesson-nav">
+                <h3>Содержание курса</h3>
+                <div id="lessonList" class="lesson-list"></div>
+              </div>
+              <div class="lesson-main">
+                <div id="lessonContent" class="lesson-text"></div>
+                <div class="lesson-actions">
+                  <button id="prevLessonBtn" class="btn btn-secondary" onclick="prevLesson()">Назад</button>
+                  <button id="nextLessonBtn" class="btn btn-primary" onclick="nextLesson()">Далее</button>
+                  <button id="takeTestBtn" class="btn btn-success hidden" onclick="goToTest()">Перейти к тесту</button>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <div id="testView" class="hidden">
+            <div class="test-header">
+              <button class="btn btn-secondary" onclick="backToLesson()"><i class="fa fa-arrow-left"></i> К курсу</button>
+              <h2 id="testTitle"></h2>
+              <div class="test-timer">Осталось времени: <span id="timer">00:00</span></div>
+            </div>
+            <div class="test-content">
+              <div class="test-progress-bar">
+                <div id="testProgressFill" class="test-progress-fill"></div>
+              </div>
+              <div id="testQuestion" class="test-question"></div>
+              <div id="testAnswers" class="test-answers"></div>
+              <div class="test-nav">
+                <button id="testPrevBtn" class="btn btn-secondary" onclick="testPrev()">Назад</button>
+                <button id="testNextBtn" class="btn btn-primary" onclick="testNext()">Далее</button>
+              </div>
+            </div>
+          </div>
+          
+          <div id="resultView" class="hidden">
+            <div class="result-box">
+              <div class="result-icon" id="resultIcon"></div>
+              <h2>Результат теста</h2>
+              <div class="result-score" id="resultScore"></div>
+              <div class="result-message" id="resultMessage"></div>
+              <div class="result-details">
+                <p>Правильных ответов: <span id="correctCount"></span> из <span id="totalQuestions"></span></p>
+                <p>Ваш балл: <span id="scorePercent"></span>%</p>
+                <p>Проходной балл: <span id="passPercent"></span>%</p>
+              </div>
+              <div class="result-actions">
+                <button class="btn btn-secondary" onclick="backToCourses()">К курсам</button>
+                <button class="btn btn-primary" onclick="retryTest()">Пройти заново</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <script src="js/jquery-3.4.1.min.js"></script>
+  <script src="js/bootstrap.js"></script>
+  <script src="js/main.js"></script>
+  <script>
+    let currentCourseId = null;
+    let currentLessonIndex = 0;
+    let currentTestQuestions = [];
+    let testAnswers = {};
+    let currentQuestionIndex = 0;
+    let testTimer = null;
+    let timeLeft = 0;
+    
+    const courseContent = {
+      1: [
+        { title: 'Введение в фармакологию', content: '<h3>Введение в фармакологию</h3><p>Фармакология - это наука о взаимодействии лекарственных веществ с живыми организмами. Она изучает механизмы действия лекарств, их фармакокинетику и фармакодинамику.</p><p>Основные разделы фармакологии:</p><ul><li>Фармакодинамика - изучает механизмы действия лекарств</li><li>Фармакокинетика - изучает процессы всасывания, распределения, метаболизма и выведения</li><li>Фармакотерапия - применение лекарств для лечения заболеваний</li></ul>' },
+        { title: 'Основные группы лекарств', content: '<h3>Основные группы лекарственных препаратов</h3><p>Лекарственны�� ср��дства классифицируются по различным признакам:</p><h4>1. По химической структуре</h4><ul><li>Органические соединения</li><li>Неорганические соединения</li><li>Биологические препараты</li></ul><h4>2. По фармакологическому действию</h4><ul><li>Анальгетики - обезболивающие</li><li>Противовоспалительные - уменьшающие воспаление</li><li>Антибактериальные - убивающие бактерии</li><li>Противовирусные - подавляющие вирусы</li></ul>' },
+        { title: 'НПВС', content: '<h3>Нестероидные противовоспалительные средства (НПВС)</h3><p>НПВС - одна из наиболее широко применяемых групп лекарственных препаратов.</p><h4>Механизм действия</h4><p>НПВС блокируют фермент циклооксигеназу (ЦОГ), который участвует в синтезе простагландинов - медиаторов воспаления и боли.</p><h4>Основные представители</h4><ul><li><strong>Ибупрофен</strong> - максимальная доза 1200-2400 мг/сутки</li><li><strong>Диклофенак</strong> - максимальная доза 150 мг/сутки</li><li><strong>Аспирин</strong> - максимальная доза 3000 мг/сутки</li><li><strong>Нимесулид</strong> - максимальная доза 200 мг/сутки</li></ul><h4>Побочные эффекты</h4><ul><li>Гастропатия (поражение желудка)</li><li>Нарушение функции почек</li><li>Повышение артериального давления</li><li>Аллергические реакции</li></ul>' },
+        { title: 'Антибиотики', content: '<h3>Антибактериальные препараты</h3><p>Антибиотики - вещества природного или синтетического происхождения, подавляющие рост или вызывающие гибель бактерий.</p><h4>Классификация по механизму действия</h4><ul><li><strong>Бактериоцидные</strong> - убивают бактерии (пенициллины, цефалоспорины, аминогликозиды)</li><li><strong>Бактериостатические</strong> - останавливают рост бактерии (макролиды, тетрациклины, линкозамиды)</li></ul><h4>Основные группы</h4><h5>Пенициллины</h5><p>Природные (бензилпенициллин) и полусинтетические (амоксициллин, ампициллин). Применяются при инфекциях дыхательных путей, ЛОР-органов.</p><h5>Цефалоспорины</h5><p>Широкий спектр действия. Применяются при сепсисе, менингите, инфекциях мочевыводящих путей.</p><h5>Макролиды</h5><p>Азитромицин, кларитромицин. Применяются при инфекциях дыхательных путей, хламидиозе.</p>' },
+        { title: 'Тест', content: '<h3>Итоговый тест</h3><p>Для проверки знаний пройдите тест по курсу.</p><button class="btn btn-success" onclick="startCourseTest()">Начать тест</button>' }
+      ],
+      2: [
+        { title: 'Правила отпуска ЛС', content: '<h3>Правила отпуска лекарственных препаратов</h3><p>Отпуск лекарственных средств регулируется но��мативными документами.</p><h4>Категории рецептурного отпуска</h4><ul><li><strong>Без рецепта</strong> - ОТС-препараты (парацетамол, ибупрофен и др.)</li><li><strong>По рецепту</strong> - рецептурные препараты</li><li><strong>Специального назначения</strong> - психотропные, наркотические препараты</li></ul><h4>Рецептурные бланки</h4><ul><li>Форма 107-1/у - для большинства рецептурных препаратов</li><li>Форма 148-1/у-88 - для препаратов строгого учета</li><li>Форма 148-1/у-04л - для наркотических и психотропных</li></ul>' },
+        { title: 'Наркотические препараты', content: '<h3>Отпуск наркотических и психотропных препаратов</h3><p>Наркотические анальгетики и психотропные препараты подлежат особому контролю.</p><h4>Список наркотических средств</h4><ul><li>Морфин</li><li>Омнопон</li><li>Промедол</li><li>Фентанил</li><li>Кодеин (в составе комплексных препаратов)</li></ul><h4>Правила отпуска</h4><ul><li>Рецепт формы 148-1/у-04л</li><li>Срок действия - 30 дней</li><li>На рецепте 2 печати (врача и медицинской организации)</li><li>Запас в аптеке не более 5 дней</li></ul>' },
+        { title: 'Контроль учета', content: '<h3>Контроль и учет лекарственных средств</h3><p>Аптеки обязаны вести строгий учет certain categories of drugs.</p><h4>Журналы учета</h4><ul><li>Журнал учета наркотических средств (форма 1-наркотики)</li><li>Журнал учета психотропных веществ</li><li>Журнал учета препаратов списка А</li><li>Журнал учета этилового спирта</li></ul><h4>Инвентаризация</h4><p>Проводится не реже 1 раза в месяц для препаратов строгого учета.</p>' },
+        { title: 'Тест', content: '<h3>Итоговый тест</h3><p>Для проверки знаний пройдите тест по курсу.</p><button class="btn btn-success" onclick="startCourseTest()">Начать тест</button>' }
+      ],
+      3: [
+        { title: 'Взаимодействия ЛС', content: '<h3>Взаимодействие лекарственных препаратов</h3><p>Лекарственные взаимодействия - это изменение эффекта одного препарата под влиянием другого.</p><h4>Типы взаимодействий</h4><ul><li><strong>Синергизм</strong> - усиление эффекта</li><li><strong>Антагонизм</strong> - ослабление эффекта</li><li><strong>Аддитивный эффект</strong> - суммирование эффектов</li></ul>' },
+        { title: 'Опасные комбинации', content: '<h3>Опасные комбинации лекарств</h3><h4>Серьезные взаимодействия</h4><ul><li><strong>Варфарин + НПВС</strong> - риск кровотечения</li><li><strong>Аминогликозиды + петлевые диуретики</strong> - ототоксичность</li><li><strong>Метронидазол + алкоголь</strong> - дисульфирамоподобная реакция</li><li><strong>Ингибиторы АПФ + калийсберегающие диуретики</strong> - гиперкалиемия</li></ul><h4>Фармацевтическая несовместимость</h4><p>Нельзя смешивать в одном шприце:</p><ul><li>Антибиотики с гепарином</li><li>Глюконат кальция с сульфатом магния</li><li>Щелочные растворы с кислотами</li></ul>' },
+        { title: 'Тест', content: '<h3>Итоговый тест</h3><p>Для проверки знаний пройдите тест по курсу.</p><button class="btn btn-success" onclick="startCourseTest()">Начать тест</button>' }
+      ],
+      4: [
+        { title: 'Хранение ЛС', content: '<h3>Хранение лекарственных средств</h3><p>Правильное хранение обеспечивает сохранность и эффективность препаратов.</p><h4>Температурные режимы</h4><ul><li><strong>Комнатная температура</strong> (15-25°С) - большинство препаратов</li><li><strong>Прохладное место</strong> (8-15°С) - некоторые антибиотики, инсулин</li><li><strong>Холодильник</strong> (2-8°С) - вакцины, биопрепараты, суппозитории</li></ul><h4>Условия хранения</h4><ul><li>Защита от света</li><li>Герметичная упаковка</li><li>Вдали от источников тепла</li><li>В недоступном для детей месте</li></ul>' },
+        { title: 'Учет и инвентаризация', content: '<h3>Учет и инвентаризация</h3><h4>Документация</h4><ul><li>Журнал приходово-расходных операций</li><li>Требования-накладные</li><li>Акты списания</li></ul><h4>Инвентаризация</h4><p>Проводится:</p><ul><li>Планово - не реже 1 раза в год</li><li>При смене материально ответственного лица</li><li>При выявлении недостачи</li></ul>' },
+        { title: 'Тест', content: '<h3>Итоговый тест</h3><p>Для проверки знаний пройдите тест по курсу.</p><button class="btn btn-success" onclick="startCourseTest()">Начать тест</button>' }
+      ],
+      5: [
+        { title: 'Консультирование', content: '<h3>Фармацевтическое консультирование</h3><p>Консультирование - важнейшая функция фармацевта.</p><h4>Этапы консультирования</h4><ol><li><strong>Приветствие</strong> - доброжелательный контакт</li><li><strong>Выяснение потребности</strong> - что беспокоит клиента</li><li><strong>Сбор информации</strong> - симптомы, принимаемые препараты</li><li><strong>Рекомендация</strong> - подбор препарата</li><li><strong>Информирование</strong> - способ применения, побочные эффекты</li><li><strong>Напутствие</strong> - при каких симптомах обратиться к врачу</li></ol>' },
+        { title: 'Типичные ситуации', content: '<h3>Типичные ситуации на приеме</h3><h4>Клиент с симптомами простуды</h4><p>Рекомендовать симптоматические средства, предупредить о необходимости обращения к врачу при ухудшении.</p><h4>Клиент с болью</h4><p>Выяснить характер и локализацию боли. При сильной боли - рекомендовать обращение к врачу.</p><h4>Клиент с аллергией</h4><p>Уточнить аллерген. Избегать препаратов с перекрестной реактивностью.</p><h4>Пожилой клиент</h4><p>Учесть возрастные особенности. Рекомендовать минимальные эффективные дозы.</p>' },
+        { title: 'Тест', content: '<h3>Итоговый тест</h3><p>Для проверки знаний пройдите тест по курсу.</p><button class="btn btn-success" onclick="startCourseTest()">Начать тест</button>' }
+      ]
+    };
+
+    const testQuestions = {
+      1: [
+        { q: 'Какой фермент блокируют НПВС?', a: ['Циклооксигеназа', 'Липоксигеназа', 'Фосфолипаза', 'Протеаза'], correct: 0 },
+        { q: 'Максимальная суточная доза ибупрофена?', a: ['800 мг', '1200 мг', '2400 мг', '3600 мг'], correct: 2 },
+        { q: 'Какой антибиотик относится к макролидам?', a: ['Амоксициллин', 'Азитромицин', 'Цефтриаксон', 'Гентамицин'], correct: 1 },
+        { q: 'Варфарин + НПВС = ?', a: ['Усиление эффекта варфарина', 'Ослабление эффекта', 'Нет взаимод��йс��вия', 'Токсическое действие'], correct: 0 },
+        { q: 'Инсулин хранится при температуре?', a: ['Комнатной', '2-8°С', '-5°С', '25-30°С'], correct: 1 }
+      ],
+      2: [
+        { q: 'Форма рецепта для наркотических препаратов?', a: ['107-1/у', '148-1/у-04л', '148-1/у-88', 'Любая из перечисленных'], correct: 1 },
+        { q: 'Срок действия рецепта на наркотики?', a: ['10 дней', '30 дней', '60 дней', '1 год'], correct: 1 },
+        { q: 'Кодеин относится к?', a: ['ОТС-препаратам', 'Наркотическим анальгетикам', 'Витаминам', 'Гепатопротекторам'], correct: 1 },
+        { q: 'Инвентаризация наркотиков проводится?', a: ['1 раз в год', '1 раз в месяц', '1 раз в неделю', 'По усмотрению'], correct: 1 },
+        { q: 'Какой препарат не требует рецепт?', a: ['Морфин', 'Кетанов', 'Парацетамол', 'Диазепам'], correct: 2 }
+      ],
+      3: [
+        { q: 'Варфарин + аспирин = ?', a: ['Синергизм', 'Антагонизм', 'Нет взаимодействия', 'Неизвестно'], correct: 0 },
+        { q: 'Метронидазол + алкоголь = ?', a: ['Нормально', 'Дисульфирамоподобная реакция', 'Усиление эффекта', 'Нет эффекта'], correct: 1 },
+        { q: 'Аминогликозиды + фуросемид = ?', a: ['Гепатотоксичность', 'Ототоксичность', 'Нефротоксичность', 'Нет взаимодействия'], correct: 1 },
+        { q: 'Ингибиторы АПФ + Верошпирон = ?', a: ['Гипокалиемия', 'Гиперкалиемия', 'Нет взаимодействия', 'Гипотензия'], correct: 1 },
+        { q: 'Нельзя смешивать в одном шприце?', a: ['Антибиотик + гепарин', 'Аспирин + парацетамол', 'Ибупрофен + найз', 'Все можно'], correct: 0 }
+      ],
+      4: [
+        { q: 'Большинство ЛС хранится при?', a: ['2-8°С', '15-25°С', '-5°С', '30°С'], correct: 1 },
+        { q: 'Инсулин хранится при?', a: ['Комнатной температуре', '2-8°С', '-5°С', '30°С'], correct: 1 },
+        { q: 'Инвентаризация должна проводиться?', a: ['1 раз в год', '1 раз в месяц', '1 раз в 5 лет', 'Не обязательно'], correct: 1 },
+        { q: 'Защита от света важна для?', a: ['Всех препаратов', 'Только светочувствительных', 'Только антибиотиков', 'Только витаминов'], correct: 1 },
+        { q: 'При смене МОЛ обязательна?', a: ['Инвентаризация', 'Только отчет', 'Только аудит', 'Ничего'], correct: 0 }
+      ],
+      5: [
+        { q: 'Первый этап консультирования?', a: ['Рекомендация', 'Приветствие', 'Информирование', 'Продажа'], correct: 1 },
+        { q: 'При сильной боли следует?', a: ['Продать обезболивающее', 'Рекомендовать обратиться к врачу', 'Дать инструкцию', 'Отказать'], correct: 1 },
+        { q: 'Пожилым рекомендуют?', a: ['Максимальные дозы', 'Минимальные эффективные дозы', 'Любые дозы', 'Неважно'], correct: 1 },
+        { q: 'При аллергии важно?', a: ['Продать любой препарат', 'Уточнить аллерген', 'Дать антигистаминное', 'Отказать'], correct: 1 },
+        { q: 'Обращение к врачу при?', a: ['Легкой простуде', 'Любых симптомах', 'Ухудшении или длительных симптомах', 'Профилактике'], correct: 2 }
+      ]
+    };
+
+    document.addEventListener('DOMContentLoaded', function() {
+      loadAvailableCourses();
+      loadEnrolledCourses();
+      
+      document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+          document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+          document.querySelectorAll('.tab-content').forEach(c => c.classList.add('hidden'));
+          this.classList.add('active');
+          document.getElementById(this.dataset.tab + 'Tab').classList.remove('hidden');
+        });
+      });
+    });
+
+    function loadAvailableCourses() {
+      const courses = getData('courses') || [];
+      const enrolled = getData('enrollments') || [];
+      const courseIds = enrolled.map(e => e.courseId);
+      const available = courses.filter(c => !courseIds.includes(c.id) && c.status === 'active');
+      
+      const container = document.getElementById('availableCourses');
+      if (available.length === 0) {
+        container.innerHTML = '<div class="empty-state"><i class="fa fa-book"></i><h3>Нет доступных курсов</h3></div>';
+        return;
+      }
+      
+      container.innerHTML = available.map(course => `
+        <div class="course-card">
+          <div class="course-card-header">
+            <span class="badge badge-success">${course.category}</span>
+          </div>
+          <h3>${course.title}</h3>
+          <p>${course.description}</p>
+          <div class="course-info">
+            <span><i class="fa fa-clock"></i> ${course.duration} ч.</span>
+          </div>
+          <button class="btn btn-primary" onclick="enrollCourse(${course.id})">Записаться</button>
+        </div>
+      `).join('');
+    }
+
+    function loadEnrolledCourses() {
+      const enrolled = getData('enrollments') || [];
+      const courses = getData('courses') || [];
+      const results = getData('results') || [];
+      
+      const container = document.getElementById('enrolledCourses');
+      if (enrolled.length === 0) {
+        container.innerHTML = '<div class="empty-state"><i class="fa fa-graduation-cap"></i><h3>Нет записанных курсов</h3></div>';
+        return;
+      }
+      
+      container.innerHTML = enrolled.map(enrollment => {
+        const course = courses.find(c => c.id === enrollment.courseId);
+        if (!course) return '';
+        
+        const progress = getCourseProgress(enrollment.courseId);
+        
+        return `
+          <div class="course-card enrolled">
+            <div class="course-card-header">
+              <span class="badge badge-success">${course.category}</span>
+              <span class="badge ${progress === 100 ? 'badge-success' : 'badge-warning'}">${progress}% пройдено</span>
+            </div>
+            <h3>${course.title}</h3>
+            <p>${course.description}</p>
+            <div class="course-info">
+              <span><i class="fa fa-clock"></i> ${course.duration} ч.</span>
+              <span><i class="fa fa-check-circle"></i> ${progress}%</span>
+            </div>
+            <button class="btn btn-primary" onclick="openCourse(${course.id})">${progress > 0 ? 'Продолжить' : 'Начать обучение'}</button>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function getCourseProgress(courseId) {
+      const lessons = courseContent[courseId];
+      if (!lessons) return 0;
+      
+      const progress = getData('courseProgress') || {};
+      const courseProgress = progress[courseId] || {};
+      const completedLessons = Object.values(courseProgress).filter(v => v === true).length;
+      
+      return Math.round((completedLessons / (lessons.length - 1)) * 100);
+    }
+
+    window.enrollCourse = function(courseId) {
+      const enrolled = getData('enrollments') || [];
+      if (enrolled.some(e => e.courseId === courseId)) {
+        alert('Вы уже записаны на этот курс');
+        return;
+      }
+      
+      enrolled.push({
+        id: Date.now(),
+        courseId: courseId,
+        enrolledDate: new Date().toISOString().split('T')[0],
+        status: 'enrolled'
+      });
+      setData('enrollments', enrolled);
+      loadAvailableCourses();
+      loadEnrolledCourses();
+      alert('Вы успешно записались на курс!');
+    };
+
+    window.openCourse = function(courseId) {
+      currentCourseId = courseId;
+      currentLessonIndex = 0;
+      
+      const courses = getData('courses') || [];
+      const course = courses.find(c => c.id === courseId);
+      if (!course) return;
+      
+      document.getElementById('coursesView').classList.add('hidden');
+      document.getElementById('lessonView').classList.remove('hidden');
+      document.getElementById('lessonCourseTitle').textContent = course.title;
+      
+      loadLessons(courseId);
+    };
+
+    function loadLessons(courseId) {
+      const lessons = courseContent[courseId];
+      if (!lessons) return;
+      
+      const progress = getData('courseProgress') || {};
+      const courseProgress = progress[courseId] || {};
+      
+      document.getElementById('lessonList').innerHTML = lessons.map((lesson, i) => `
+        <div class="lesson-item ${i === currentLessonIndex ? 'active' : ''} ${courseProgress[lesson.title] ? 'completed' : ''}" onclick="selectLesson(${i})">
+          <span class="lesson-num">${i + 1}</span>
+          <span class="lesson-title">${lesson.title}</span>
+          ${courseProgress[lesson.title] ? '<i class="fa fa-check-circle"></i>' : ''}
+        </div>
+      `).join('');
+      
+      showLesson(currentLessonIndex);
+      updateProgress(courseId);
+    }
+
+    function showLesson(index) {
+      const lessons = courseContent[currentCourseId];
+      if (!lessons || !lessons[index]) return;
+      
+      const lesson = lessons[index];
+      
+      if (lesson.title === 'Тест') {
+        document.getElementById('lessonContent').innerHTML = lesson.content;
+        document.getElementById('nextLessonBtn').classList.add('hidden');
+        document.getElementById('takeTestBtn').classList.remove('hidden');
+        document.getElementById('prevLessonBtn').style.visibility = index === 0 ? 'hidden' : 'visible';
+      } else {
+        document.getElementById('lessonContent').innerHTML = lesson.content;
+        document.getElementById('takeTestBtn').classList.add('hidden');
+        document.getElementById('nextLessonBtn').classList.remove('hidden');
+        document.getElementById('prevLessonBtn').style.visibility = index === 0 ? 'hidden' : 'visible';
+      }
+    }
+
+    function selectLesson(index) {
+      currentLessonIndex = index;
+      loadLessons(currentCourseId);
+    }
+
+    function prevLesson() {
+      if (currentLessonIndex > 0) {
+        currentLessonIndex--;
+        loadLessons(currentCourseId);
+      }
+    }
+
+    function nextLesson() {
+      const lessons = courseContent[currentCourseId];
+      if (!lessons) return;
+      
+      const lesson = lessons[currentLessonIndex];
+      if (lesson) {
+        saveLessonProgress(lesson.title);
+      }
+      
+      if (currentLessonIndex < lessons.length - 1) {
+        currentLessonIndex++;
+        loadLessons(currentCourseId);
+      }
+    }
+
+    function saveLessonProgress(lessonTitle) {
+      const progress = getData('courseProgress') || {};
+      if (!progress[currentCourseId]) progress[currentCourseId] = {};
+      progress[currentCourseId][lessonTitle] = true;
+      setData('courseProgress', progress);
+    }
+
+    function updateProgress(courseId) {
+      const progress = getData('courseProgress') || {};
+      const courseProgress = progress[courseId] || {};
+      const lessons = courseContent[courseId];
+      if (!lessons) return;
+      
+      const completed = Object.values(courseProgress).filter(v => v === true).length;
+      const total = lessons.length - 1;
+      const percent = Math.round((completed / total) * 100);
+      
+      document.getElementById('lessonProgress').textContent = percent;
+    }
+
+    window.backToCourses = function() {
+      document.getElementById('lessonView').classList.add('hidden');
+      document.getElementById('testView').classList.add('hidden');
+      document.getElementById('resultView').classList.add('hidden');
+      document.getElementById('coursesView').classList.remove('hidden');
+      loadEnrolledCourses();
+    };
+
+    window.goToTest = function() {
+      startCourseTest();
+    };
+
+    window.startCourseTest = function() {
+      const questions = testQuestions[currentCourseId];
+      if (!questions || questions.length === 0) {
+        alert('Тест пока недоступен');
+        return;
+      }
+      
+      const tests = getData('tests') || [];
+      const testInfo = tests.find(t => t.courseId === currentCourseId);
+      
+      currentTestQuestions = questions.map(q => ({...q}));
+      testAnswers = {};
+      currentQuestionIndex = 0;
+      
+      if (testInfo) {
+        timeLeft = testInfo.duration * 60;
+        startTimer();
+      } else {
+        timeLeft = 600;
+        startTimer();
+      }
+      
+      document.getElementById('testTitle').textContent = 'Тест по курсу';
+      document.getElementById('lessonView').classList.add('hidden');
+      document.getElementById('testView').classList.remove('hidden');
+      
+      showTestQuestion();
+    };
+
+    function startTimer() {
+      if (testTimer) clearInterval(testTimer);
+      
+      testTimer = setInterval(() => {
+        timeLeft--;
+        const min = Math.floor(timeLeft / 60);
+        const sec = timeLeft % 60;
+        document.getElementById('timer').textContent = 
+          (min < 10 ? '0' + min : min) + ':' + (sec < 10 ? '0' + sec : sec);
+        
+        if (timeLeft <= 0) {
+          clearInterval(testTimer);
+          submitTest();
+        }
+      }, 1000);
+    }
+
+    function showTestQuestion() {
+      const q = currentTestQuestions[currentQuestionIndex];
+      if (!q) return;
+      
+      const progress = ((currentQuestionIndex + 1) / currentTestQuestions.length) * 100;
+      document.getElementById('testProgressFill').style.width = progress + '%';
+      
+      document.getElementById('testQuestion').innerHTML = `<h4>${currentQuestionIndex + 1}. ${q.q}</h4>`;
+      
+      document.getElementById('testAnswers').innerHTML = q.a.map((answer, i) => `
+        <label class="answer-option ${testAnswers[currentQuestionIndex] === i ? 'selected' : ''}">
+          <input type="radio" name="answer" value="${i}" ${testAnswers[currentQuestionIndex] === i ? 'checked' : ''} onchange="selectAnswer(${i})">
+          ${answer}
+        </label>
+      `).join('');
+      
+      document.getElementById('testPrevBtn').style.visibility = currentQuestionIndex === 0 ? 'hidden' : 'visible';
+      document.getElementById('testNextBtn').textContent = 
+        currentQuestionIndex === currentTestQuestions.length - 1 ? 'Завершить' : 'Далее';
+    }
+
+    function selectAnswer(index) {
+      testAnswers[currentQuestionIndex] = index;
+      showTestQuestion();
+    }
+
+    function testPrev() {
+      if (currentQuestionIndex > 0) {
+        currentQuestionIndex--;
+        showTestQuestion();
+      }
+    }
+
+    function testNext() {
+      if (testAnswers[currentQuestionIndex] === undefined) {
+        alert('Выберите ответ');
+        return;
+      }
+      
+      if (currentQuestionIndex < currentTestQuestions.length - 1) {
+        currentQuestionIndex++;
+        showTestQuestion();
+      } else {
+        submitTest();
+      }
+    }
+
+    function submitTest() {
+      clearInterval(testTimer);
+      
+      let correct = 0;
+      currentTestQuestions.forEach((q, i) => {
+        if (testAnswers[i] === q.correct) correct++;
+      });
+      
+      const score = Math.round((correct / currentTestQuestions.length) * 100);
+      const tests = getData('tests') || [];
+      const testInfo = tests.find(t => t.courseId === currentCourseId);
+      const passScore = testInfo ? testInfo.passingScore : 70;
+      const passed = score >= passScore;
+      
+      const results = getData('results') || [];
+      results.push({
+        id: Date.now(),
+        pharmacistId: 1,
+        testId: currentCourseId,
+        score: score,
+        date: new Date().toISOString().split('T')[0],
+        status: passed ? 'passed' : 'failed'
+      });
+      setData('results', results);
+      
+      document.getElementById('testView').classList.add('hidden');
+      document.getElementById('resultView').classList.remove('hidden');
+      
+      document.getElementById('resultIcon').innerHTML = passed ? 
+        '<i class="fa fa-check-circle"></i>' : '<i class="fa fa-times-circle"></i>';
+      document.getElementById('resultScore').textContent = score + '%';
+      document.getElementById('resultScore').className = 'result-score ' + (passed ? 'pass' : 'fail');
+      document.getElementById('resultMessage').textContent = passed ? 
+        'Поздравляем! Вы сдали тест.' : 'Вы не набрали проходной балл.';
+      document.getElementById('correctCount').textContent = correct;
+      document.getElementById('totalQuestions').textContent = currentTestQuestions.length;
+      document.getElementById('scorePercent').textContent = score;
+      document.getElementById('passPercent').textContent = passScore;
+    }
+
+    window.retryTest = function() {
+      testAnswers = {};
+      currentQuestionIndex = 0;
+      startCourseTest();
+    };
+
+    window.backToLesson = function() {
+      document.getElementById('testView').classList.add('hidden');
+      document.getElementById('resultView').classList.add('hidden');
+      document.getElementById('lessonView').classList.remove('hidden');
+    };
+  </script>
+</body>
+</html>
