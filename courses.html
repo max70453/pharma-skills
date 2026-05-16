@@ -61,7 +61,7 @@
     </div>
   </div>
   <div id="editCourseModal" class="modal">
-    <div class="modal-content">
+    <div class="modal-content modal-large">
       <div class="modal-header">
         <h2>Редактировать курс</h2>
         <button class="modal-close" onclick="closeModal('editCourseModal')">&times;</button>
@@ -84,8 +84,39 @@
           <label>Описание</label>
           <textarea class="form-control" id="editDescription" rows="3"></textarea>
         </div>
+        <div class="form-group">
+          <label>Разделы курса</label>
+          <div id="sectionsList"></div>
+          <button type="button" class="btn btn-secondary mt-2" onclick="openAddSectionModal()"><i class="fa fa-plus"></i> Добавить раздел</button>
+        </div>
         <button type="submit" class="btn btn-primary">Сохранить</button>
         <button type="button" class="btn btn-danger" onclick="closeModal('editCourseModal')">Отмена</button>
+      </form>
+    </div>
+  </div>
+
+  <div id="addSectionModal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>Добавить раздел</h2>
+        <button class="modal-close" onclick="closeModal('addSectionModal')">&times;</button>
+      </div>
+      <form onsubmit="event.preventDefault(); addSection();">
+        <div class="form-group">
+          <label>Название раздела</label>
+          <input type="text" class="form-control" id="sectionTitle" required>
+        </div>
+        <div class="form-group">
+          <label>Текст обучения</label>
+          <textarea class="form-control" id="sectionContent" rows="5" placeholder="Введите текст лекции"></textarea>
+        </div>
+        <div class="form-group">
+          <label>Учебные материалы (лекции, видео)</label>
+          <input type="file" class="form-control" id="sectionMaterials" multiple accept=".pdf,.doc,.docx,.ppt,.pptx,.mp4,.avi,.webm">
+          <small class="text-muted">Можно загрузить несколько файлов (PDF, Word, PowerPoint, видео)</small>
+        </div>
+        <button type="submit" class="btn btn-primary">Добавить раздел</button>
+        <button type="button" class="btn btn-danger" onclick="closeModal('addSectionModal')">Отмена</button>
       </form>
     </div>
   </div>

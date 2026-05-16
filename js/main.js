@@ -5,8 +5,14 @@ const STORAGE_KEYS = {
   RESULTS: 'results',
   CURRENT_USER: 'currentUser',
   ENROLLMENTS: 'enrollments',
-  SETTINGS: 'settings'
+  SETTINGS: 'settings',
+  QUESTIONS: 'testQuestions',
+  SECTIONS: 'courseSections',
+  FEEDBACK: 'feedback'
 };
+
+let currentQuestions = [];
+let currentSections = [];
 
 const DEFAULT_DATA = {
   pharmacists: [
@@ -55,6 +61,15 @@ function initStorage() {
   }
   if (!localStorage.getItem(STORAGE_KEYS.CURRENT_USER)) {
     localStorage.setItem(STORAGE_KEYS.CURRENT_USER, JSON.stringify(DEFAULT_DATA.currentUser));
+  }
+  if (!localStorage.getItem(STORAGE_KEYS.QUESTIONS)) {
+    localStorage.setItem(STORAGE_KEYS.QUESTIONS, JSON.stringify([]));
+  }
+  if (!localStorage.getItem(STORAGE_KEYS.SECTIONS)) {
+    localStorage.setItem(STORAGE_KEYS.SECTIONS, JSON.stringify([]));
+  }
+  if (!localStorage.getItem(STORAGE_KEYS.FEEDBACK)) {
+    localStorage.setItem(STORAGE_KEYS.FEEDBACK, JSON.stringify([]));
   }
 }
 
@@ -251,40 +266,127 @@ function loadPharmacists() {
 
 function loadCourses() {
   const courses = getData(STORAGE_KEYS.COURSES) || [];
+  const sections = getData(STORAGE_KEYS.SECTIONS) || [];
   const tbody = document.getElementById('coursesTableBody');
   
   if (courses.length > 0) {
-    tbody.innerHTML = courses.map(c => `
-      <tr>
-        <td>${c.title}</td>
-        <td>${c.category}</td>
-        <td>${c.duration} ч.</td>
-        <td>${c.description.substring(0, 50)}...</td>
-        <td class="status-col"><span class="badge ${c.status === 'active' ? 'badge-success' : 'badge-danger'}">${c.status === 'active' ? 'Активен' : 'Неактивен'}</span></td>
-        <td class="actions-col">
-          <button class="btn btn-sm btn-primary" onclick="editCourse(${c.id})"><i class="fa fa-edit"></i></button>
-          <button class="btn btn-sm btn-danger" onclick="deleteCourse(${c.id})"><i class="fa fa-trash"></i></button>
-        </td>
-      </tr>
-    `).join('');
+    tbody.innerHTML = courses.map(c => {
+      const courseSections = sections.filter(s => s.courseId === c.id).length;
+      return `
+        <tr>
+          <td>${c.title}</td>
+          <td>${c.category}</td>
+          <td>${c.duration} ч.</td>
+          <td>${c.description ? c.description.substring(0, 50) : ''}${c.description && c.description.length > 50 ? '...' : ''}</td>
+          <td class="status-col"><span class="badge ${c.status === 'active' ? 'badge-success' : 'badge-danger'}">${c.status === 'active' ? 'Активен' : 'Неактивен'}</span></td>
+          <td class="actions-col">
+            <button class="btn btn-sm btn-primary" onclick="editCourse(${c.id})"><i class="fa fa-edit"></i></button>
+            <button class="btn btn-sm btn-danger" onclick="deleteCourse(${c.id})"><i class="fa fa-trash"></i></button>
+          </td>
+        </tr>
+      `;
+    }).join('');
   } else {
     tbody.innerHTML = '<tr><td colspan="6" class="text-center">Нет данных</td></tr>';
   }
 }
 
+function getCourseSections(courseId) {
+  const sections = getData(STORAGE_KEYS.SECTIONS) || [];
+  return sections.filter(s => s.courseId === courseId);
+}
+
+function saveSections(courseId, sections) {
+  const allSections = getData(STORAGE_KEYS.SECTIONS) || [];
+  const filtered = allSections.filter(s => s.courseId !== courseId);
+  const updated = [...filtered, ...sections.map((s, idx) => ({...s, courseId, id: idx + 1}))];
+  setData(STORAGE_KEYS.SECTIONS, updated);
+}
+
+function openAddSectionModal() {
+  document.getElementById('sectionTitle').value = '';
+  document.getElementById('sectionContent').value = '';
+  document.getElementById('sectionMaterials').value = '';
+  document.getElementById('addSectionModal').classList.add('active');
+}
+
+function addSection() {
+  const title = document.getElementById('sectionTitle').value;
+  const content = document.getElementById('sectionContent').value;
+  const materialsInput = document.getElementById('sectionMaterials');
+  const materials = [];
+  
+  if (materialsInput.files.length > 0) {
+    for (let i = 0; i < materialsInput.files.length; i++) {
+      const file = materialsInput.files[i];
+      materials.push({
+        name: file.name,
+        size: file.size,
+        type: file.type,
+        data: file.name
+      });
+    }
+  }
+  
+  currentSections.push({
+    title: title,
+    content: content,
+    materials: materials
+  });
+  
+  renderSectionsList();
+  closeModal('addSectionModal');
+}
+
+function renderSectionsList() {
+  const container = document.getElementById('sectionsList');
+  if (!container) return;
+  
+  if (currentSections.length === 0) {
+    container.innerHTML = '<p class="text-muted">Разделы не добавлены</p>';
+    return;
+  }
+  
+  container.innerHTML = currentSections.map((s, idx) => `
+    <div class="section-item card mb-2">
+      <div class="card-body">
+        <div class="d-flex justify-content-between align-items-start">
+          <div>
+            <strong>Раздел ${idx + 1}: ${s.title}</strong>
+          </div>
+          <button type="button" class="btn btn-sm btn-danger" onclick="removeSection(${idx})"><i class="fa fa-trash"></i></button>
+        </div>
+        <p class="mt-2 mb-1">${s.content ? s.content.substring(0, 100) + (s.content.length > 100 ? '...' : '') : 'Нет текста'}</p>
+        ${s.materials && s.materials.length > 0 ? `<small class="text-muted">Материалов: ${s.materials.length}</small>` : ''}
+      </div>
+    </div>
+  `).join('');
+}
+
+function removeSection(index) {
+  currentSections.splice(index, 1);
+  renderSectionsList();
+}
+
+window.openAddSectionModal = openAddSectionModal;
+window.addSection = addSection;
+window.removeSection = removeSection;
+
 function loadTests() {
   const tests = getData(STORAGE_KEYS.TESTS) || [];
   const courses = getData(STORAGE_KEYS.COURSES) || [];
+  const questions = getData(STORAGE_KEYS.QUESTIONS) || [];
   const tbody = document.getElementById('testsTableBody');
   
   if (tests.length > 0) {
     tbody.innerHTML = tests.map(t => {
       const course = courses.find(c => c.id === t.courseId);
+      const testQuestions = questions.filter(q => q.testId === t.id).length;
       return `
         <tr>
           <td>${t.title}</td>
           <td>${course ? course.title : 'Нет'}</td>
-          <td>${t.questions}</td>
+          <td>${testQuestions}</td>
           <td>${t.duration} мин.</td>
           <td>${t.passingScore}%</td>
           <td class="status-col"><span class="badge ${t.status === 'active' ? 'badge-success' : 'badge-danger'}">${t.status === 'active' ? 'Активен' : 'Неактивен'}</span></td>
@@ -299,6 +401,144 @@ function loadTests() {
     tbody.innerHTML = '<tr><td colspan="7" class="text-center">Нет данных</td></tr>';
   }
 }
+
+function getTestQuestions(testId) {
+  const questions = getData(STORAGE_KEYS.QUESTIONS) || [];
+  return questions.filter(q => q.testId === testId);
+}
+
+function saveQuestions(testId, questions) {
+  const allQuestions = getData(STORAGE_KEYS.QUESTIONS) || [];
+  const filtered = allQuestions.filter(q => q.testId !== testId);
+  const updated = [...filtered, ...questions.map((q, idx) => ({...q, testId, id: idx + 1}))];
+  setData(STORAGE_KEYS.QUESTIONS, updated);
+}
+
+function toggleQuestionOptions() {
+  const type = document.getElementById('questionType').value;
+  const optionsGroup = document.getElementById('optionsGroup');
+  const textAnswerGroup = document.getElementById('textAnswerGroup');
+  
+  if (type === 'text') {
+    optionsGroup.style.display = 'none';
+    textAnswerGroup.style.display = 'block';
+  } else {
+    optionsGroup.style.display = 'block';
+    textAnswerGroup.style.display = 'none';
+  }
+}
+
+function addAnswerOption() {
+  const container = document.getElementById('answerOptions');
+  const optionCount = container.children.length;
+  const div = document.createElement('div');
+  div.className = 'input-group mb-2';
+  div.innerHTML = `
+    <input type="text" class="form-control answer-option" placeholder="Вариант ответа">
+    <div class="input-group-append">
+      <div class="input-group-text">
+        <input type="${document.getElementById('questionType').value === 'multiple' ? 'checkbox' : 'radio'}" name="correctAnswer" value="${optionCount}" title="Правильный ответ">
+      </div>
+    </div>
+    <button type="button" class="btn btn-sm btn-danger ml-2" onclick="this.parentElement.remove()"><i class="fa fa-times"></i></button>
+  `;
+  container.appendChild(div);
+}
+
+function openAddQuestionModal() {
+  document.getElementById('questionText').value = '';
+  document.getElementById('questionType').value = 'single';
+  document.getElementById('correctTextAnswer').value = '';
+  document.getElementById('answerOptions').innerHTML = `
+    <div class="input-group mb-2">
+      <input type="text" class="form-control answer-option" placeholder="Вариант ответа">
+      <div class="input-group-append">
+        <div class="input-group-text">
+          <input type="radio" name="correctAnswer" value="0" title="Правильный ответ">
+        </div>
+      </div>
+    </div>
+    <div class="input-group mb-2">
+      <input type="text" class="form-control answer-option" placeholder="Вариант ответа">
+      <div class="input-group-append">
+        <div class="input-group-text">
+          <input type="radio" name="correctAnswer" value="1" title="Правильный ответ">
+        </div>
+      </div>
+    </div>
+  `;
+  toggleQuestionOptions();
+  document.getElementById('addQuestionModal').classList.add('active');
+}
+
+function addQuestion() {
+  const text = document.getElementById('questionText').value;
+  const type = document.getElementById('questionType').value;
+  
+  let question = {
+    text: text,
+    type: type
+  };
+  
+  if (type === 'text') {
+    question.correctAnswer = document.getElementById('correctTextAnswer').value;
+  } else {
+    const options = [];
+    document.querySelectorAll('.answer-option').forEach((input, idx) => {
+      if (input.value.trim()) {
+        const isCorrect = type === 'multiple' 
+          ? document.querySelectorAll('input[name="correctAnswer"]:checked')[idx]?.checked
+          : document.querySelector('input[name="correctAnswer"]:checked')?.value == idx;
+        options.push({
+          text: input.value,
+          isCorrect: type === 'multiple' ? !!document.querySelector(`input[name="correctAnswer"][value="${idx}"]`)?.checked : idx === parseInt(document.querySelector('input[name="correctAnswer"]:checked')?.value || -1)
+        });
+      }
+    });
+    question.options = options;
+  }
+  
+  currentQuestions.push(question);
+  renderQuestionsList();
+  closeModal('addQuestionModal');
+}
+
+function renderQuestionsList() {
+  const container = document.getElementById('questionsList');
+  if (!container) return;
+  
+  if (currentQuestions.length === 0) {
+    container.innerHTML = '<p class="text-muted">Вопросы не добавлены</p>';
+    return;
+  }
+  
+  container.innerHTML = currentQuestions.map((q, idx) => `
+    <div class="question-item card mb-2">
+      <div class="card-body">
+        <div class="d-flex justify-content-between align-items-start">
+          <div>
+            <strong>Вопрос ${idx + 1}</strong> 
+            <span class="badge badge-secondary">${q.type === 'single' ? 'Один ответ' : q.type === 'multiple' ? 'Несколько ответов' : 'Текстовый'}</span>
+          </div>
+          <button type="button" class="btn btn-sm btn-danger" onclick="removeQuestion(${idx})"><i class="fa fa-trash"></i></button>
+        </div>
+        <p class="mt-2 mb-1">${q.text}</p>
+        ${q.options ? `<small class="text-muted">Вариантов: ${q.options.length}</small>` : `<small class="text-muted">Правильный ответ: ${q.correctAnswer}</small>`}
+      </div>
+    </div>
+  `).join('');
+}
+
+function removeQuestion(index) {
+  currentQuestions.splice(index, 1);
+  renderQuestionsList();
+}
+
+window.openAddQuestionModal = openAddQuestionModal;
+window.toggleQuestionOptions = toggleQuestionOptions;
+window.addAnswerOption = addAnswerOption;
+window.addQuestion = addQuestion;
+window.removeQuestion = removeQuestion;
 
 function loadResults() {
   const results = getData(STORAGE_KEYS.RESULTS) || [];
@@ -367,6 +607,11 @@ function deleteCourse(id) {
     let courses = getData(STORAGE_KEYS.COURSES) || [];
     courses = courses.filter(c => c.id !== id);
     setData(STORAGE_KEYS.COURSES, courses);
+    
+    let sections = getData(STORAGE_KEYS.SECTIONS) || [];
+    sections = sections.filter(s => s.courseId !== id);
+    setData(STORAGE_KEYS.SECTIONS, sections);
+    
     loadCourses();
   }
 }
@@ -376,6 +621,11 @@ function deleteTest(id) {
     let tests = getData(STORAGE_KEYS.TESTS) || [];
     tests = tests.filter(t => t.id !== id);
     setData(STORAGE_KEYS.TESTS, tests);
+    
+    let questions = getData(STORAGE_KEYS.QUESTIONS) || [];
+    questions = questions.filter(q => q.testId !== id);
+    setData(STORAGE_KEYS.QUESTIONS, questions);
+    
     loadTests();
   }
 }
@@ -391,6 +641,9 @@ function openAddModal() {
 }
 
 function openAddCourseModal() {
+  currentSections = [];
+  renderSectionsList();
+  
   document.getElementById('editCourseId').value = '';
   document.getElementById('editTitle').value = '';
   document.getElementById('editCategory').value = '';
@@ -404,10 +657,12 @@ function openAddTestModal() {
   const courseSelect = document.getElementById('editTestCourse');
   courseSelect.innerHTML = courses.map(c => `<option value="${c.id}">${c.title}</option>`).join('');
   
+  currentQuestions = [];
+  renderQuestionsList();
+  
   document.getElementById('editTestId').value = '';
   document.getElementById('editTestTitle').value = '';
   document.getElementById('editTestCourse').value = '';
-  document.getElementById('editQuestions').value = '';
   document.getElementById('editDuration').value = '';
   document.getElementById('editPassingScore').value = '';
   document.getElementById('editTestModal').classList.add('active');
@@ -430,11 +685,15 @@ function editPharmacist(id) {
 function editCourse(id) {
   const courses = getData(STORAGE_KEYS.COURSES) || [];
   const course = courses.find(c => c.id === id);
+  
   if (course) {
+    currentSections = getCourseSections(id);
+    renderSectionsList();
+    
     document.getElementById('editTitle').value = course.title;
     document.getElementById('editCategory').value = course.category;
     document.getElementById('editDuration').value = course.duration;
-    document.getElementById('editDescription').value = course.description;
+    document.getElementById('editDescription').value = course.description || '';
     document.getElementById('editCourseId').value = course.id;
     document.getElementById('editCourseModal').classList.add('active');
   }
@@ -443,10 +702,16 @@ function editCourse(id) {
 function editTest(id) {
   const tests = getData(STORAGE_KEYS.TESTS) || [];
   const test = tests.find(t => t.id === id);
+  const courses = getData(STORAGE_KEYS.COURSES) || [];
+  const courseSelect = document.getElementById('editTestCourse');
+  courseSelect.innerHTML = courses.map(c => `<option value="${c.id}">${c.title}</option>`).join('');
+  
   if (test) {
+    currentQuestions = getTestQuestions(id);
+    renderQuestionsList();
+    
     document.getElementById('editTestTitle').value = test.title;
     document.getElementById('editTestCourse').value = test.courseId;
-    document.getElementById('editQuestions').value = test.questions;
     document.getElementById('editDuration').value = test.duration;
     document.getElementById('editPassingScore').value = test.passingScore;
     document.getElementById('editTestId').value = test.id;
@@ -486,6 +751,10 @@ function updatePharmacist() {
 
 function updateCourse() {
   const id = parseInt(document.getElementById('editCourseId').value);
+  const title = document.getElementById('editTitle').value;
+  const category = document.getElementById('editCategory').value;
+  const duration = parseInt(document.getElementById('editDuration').value);
+  const description = document.getElementById('editDescription').value;
   
   if (id) {
     let courses = getData(STORAGE_KEYS.COURSES) || [];
@@ -493,27 +762,35 @@ function updateCourse() {
     if (index !== -1) {
       courses[index] = {
         ...courses[index],
-        title: document.getElementById('editTitle').value,
-        category: document.getElementById('editCategory').value,
-        duration: parseInt(document.getElementById('editDuration').value),
-        description: document.getElementById('editDescription').value
+        title: title,
+        category: category,
+        duration: duration,
+        description: description
       };
       setData(STORAGE_KEYS.COURSES, courses);
+      saveSections(id, currentSections);
       loadCourses();
     }
   } else {
+    const newId = generateId(STORAGE_KEYS.COURSES);
     addCourse({
-      title: document.getElementById('editTitle').value,
-      category: document.getElementById('editCategory').value,
-      duration: parseInt(document.getElementById('editDuration').value),
-      description: document.getElementById('editDescription').value
+      id: newId,
+      title: title,
+      category: category,
+      duration: duration,
+      description: description
     });
+    saveSections(newId, currentSections);
   }
   closeModal('editCourseModal');
 }
 
 function updateTest() {
   const id = parseInt(document.getElementById('editTestId').value);
+  const title = document.getElementById('editTestTitle').value;
+  const courseId = parseInt(document.getElementById('editTestCourse').value);
+  const duration = parseInt(document.getElementById('editDuration').value);
+  const passingScore = parseInt(document.getElementById('editPassingScore').value);
   
   if (id) {
     let tests = getData(STORAGE_KEYS.TESTS) || [];
@@ -521,23 +798,27 @@ function updateTest() {
     if (index !== -1) {
       tests[index] = {
         ...tests[index],
-        title: document.getElementById('editTestTitle').value,
-        courseId: parseInt(document.getElementById('editTestCourse').value),
-        questions: parseInt(document.getElementById('editQuestions').value),
-        duration: parseInt(document.getElementById('editDuration').value),
-        passingScore: parseInt(document.getElementById('editPassingScore').value)
+        title: title,
+        courseId: courseId,
+        questions: currentQuestions.length,
+        duration: duration,
+        passingScore: passingScore
       };
       setData(STORAGE_KEYS.TESTS, tests);
+      saveQuestions(id, currentQuestions);
       loadTests();
     }
   } else {
+    const newId = generateId(STORAGE_KEYS.TESTS);
     addTest({
-      title: document.getElementById('editTestTitle').value,
-      courseId: parseInt(document.getElementById('editTestCourse').value),
-      questions: parseInt(document.getElementById('editQuestions').value),
-      duration: parseInt(document.getElementById('editDuration').value),
-      passingScore: parseInt(document.getElementById('editPassingScore').value)
+      id: newId,
+      title: title,
+      courseId: courseId,
+      questions: currentQuestions.length,
+      duration: duration,
+      passingScore: passingScore
     });
+    saveQuestions(newId, currentQuestions);
   }
   closeModal('editTestModal');
 }
@@ -629,4 +910,71 @@ document.addEventListener('DOMContentLoaded', function() {
       sidebar.classList.toggle('active');
     });
   }
+  
+  if (document.getElementById('feedbackHistory')) {
+    loadFeedbackHistory();
+  }
 });
+
+window.submitFeedback = function() {
+  const topic = document.getElementById('feedbackTopic').value;
+  const message = document.getElementById('feedbackMessage').value;
+  const user = getData(STORAGE_KEYS.CURRENT_USER);
+  
+  if (!topic || !message) {
+    alert('Заполните все поля');
+    return;
+  }
+  
+  const feedback = getData(STORAGE_KEYS.FEEDBACK) || [];
+  feedback.push({
+    id: Date.now(),
+    userId: user ? user.id : null,
+    userName: user ? user.name : 'Фармацевт',
+    topic: topic,
+    message: message,
+    date: new Date().toISOString().split('T')[0],
+    status: 'new'
+  });
+  setData(STORAGE_KEYS.FEEDBACK, feedback);
+  
+  document.getElementById('feedbackTopic').value = '';
+  document.getElementById('feedbackMessage').value = '';
+  
+  alert('Ваш вопрос отправлен администратору!');
+  loadFeedbackHistory();
+};
+
+function loadFeedbackHistory() {
+  const container = document.getElementById('feedbackHistory');
+  if (!container) return;
+  
+  const feedback = getData(STORAGE_KEYS.FEEDBACK) || [];
+  const user = getData(STORAGE_KEYS.CURRENT_USER);
+  const userFeedback = feedback.filter(f => f.userId === user?.id);
+  
+  if (userFeedback.length === 0) {
+    container.innerHTML = '<p class="text-muted">У вас пока нет обращений</p>';
+    return;
+  }
+  
+  const topicNames = {
+    course: 'Вопрос по курсу',
+    test: 'Вопрос по тесту',
+    technical: 'Техническая проблема',
+    other: 'Другое'
+  };
+  
+  container.innerHTML = userFeedback.reverse().map(f => `
+    <div class="card mb-2">
+      <div class="card-body">
+        <div class="d-flex justify-content-between">
+          <strong>${topicNames[f.topic] || f.topic}</strong>
+          <span class="text-muted">${f.date}</span>
+        </div>
+        <p class="mb-1">${f.message}</p>
+        <small class="text-muted">Статус: ${f.status === 'new' ? 'Ожидает ответа' : f.status === 'answered' ? 'Отвечено' : 'Закрыт'}</small>
+      </div>
+    </div>
+  `).join('');
+}

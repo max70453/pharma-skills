@@ -38,6 +38,7 @@
             <div class="tabs">
               <button class="tab-btn active" data-tab="available">Доступные курсы</button>
               <button class="tab-btn" data-tab="enrolled">Мои курсы</button>
+              <button class="tab-btn" data-tab="feedback">Обратная связь</button>
             </div>
             
             <div id="availableTab" class="tab-content">
@@ -46,6 +47,35 @@
             
             <div id="enrolledTab" class="tab-content hidden">
               <div id="enrolledCourses" class="course-grid"></div>
+            </div>
+            
+            <div id="feedbackTab" class="tab-content hidden">
+              <div class="card">
+                <div class="card-body">
+                  <h3>Задать вопрос администратору</h3>
+                  <p class="text-muted">Если у вас есть вопросы по курсам, тестам или работе системы, задайте их здесь.</p>
+                  <form onsubmit="event.preventDefault(); submitFeedback();">
+                    <div class="form-group">
+                      <label>Тема</label>
+                      <select class="form-control" id="feedbackTopic" required>
+                        <option value="">Выберите тему</option>
+                        <option value="course">Вопрос по курсу</option>
+                        <option value="test">Вопрос по тесту</option>
+                        <option value="technical">Техническая проблема</option>
+                        <option value="other">Другое</option>
+                      </select>
+                    </div>
+                    <div class="form-group">
+                      <label>Сообщение</label>
+                      <textarea class="form-control" id="feedbackMessage" rows="5" placeholder="Опишите ваш вопрос..." required></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-primary"><i class="fa fa-paper-plane"></i> Отправить</button>
+                  </form>
+                  <hr>
+                  <h4>История обращений</h4>
+                  <div id="feedbackHistory"></div>
+                </div>
+              </div>
             </div>
           </div>
           

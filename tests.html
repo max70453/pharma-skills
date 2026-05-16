@@ -62,7 +62,7 @@
     </div>
   </div>
   <div id="editTestModal" class="modal">
-    <div class="modal-content">
+    <div class="modal-content modal-large">
       <div class="modal-header">
         <h2>Редактировать тест</h2>
         <button class="modal-close" onclick="closeModal('editTestModal')">&times;</button>
@@ -78,10 +78,6 @@
           <select class="form-control" id="editTestCourse" required></select>
         </div>
         <div class="form-group">
-          <label>Количество вопросов</label>
-          <input type="number" class="form-control" id="editQuestions" required>
-        </div>
-        <div class="form-group">
           <label>Время (минуты)</label>
           <input type="number" class="form-control" id="editDuration" required>
         </div>
@@ -89,8 +85,64 @@
           <label>Проходной балл (%)</label>
           <input type="number" class="form-control" id="editPassingScore" required>
         </div>
+        <div class="form-group">
+          <label>Вопросы теста</label>
+          <div id="questionsList"></div>
+          <button type="button" class="btn btn-secondary mt-2" onclick="openAddQuestionModal()"><i class="fa fa-plus"></i> Добавить вопрос</button>
+        </div>
         <button type="submit" class="btn btn-primary">Сохранить</button>
         <button type="button" class="btn btn-danger" onclick="closeModal('editTestModal')">Отмена</button>
+      </form>
+    </div>
+  </div>
+
+  <div id="addQuestionModal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>Добавить вопрос</h2>
+        <button class="modal-close" onclick="closeModal('addQuestionModal')">&times;</button>
+      </div>
+      <form onsubmit="event.preventDefault(); addQuestion();">
+        <div class="form-group">
+          <label>Текст вопроса</label>
+          <textarea class="form-control" id="questionText" rows="2" required></textarea>
+        </div>
+        <div class="form-group">
+          <label>Тип вопроса</label>
+          <select class="form-control" id="questionType" onchange="toggleQuestionOptions()">
+            <option value="single">Один правильный ответ</option>
+            <option value="multiple">Несколько правильных ответов</option>
+            <option value="text">Ввод ответа вручную</option>
+          </select>
+        </div>
+        <div class="form-group" id="optionsGroup">
+          <label>Варианты ответов</label>
+          <div id="answerOptions">
+            <div class="input-group mb-2">
+              <input type="text" class="form-control answer-option" placeholder="Вариант ответа">
+              <div class="input-group-append">
+                <div class="input-group-text">
+                  <input type="radio" name="correctAnswer" value="0" title="Правильный ответ">
+                </div>
+              </div>
+            </div>
+            <div class="input-group mb-2">
+              <input type="text" class="form-control answer-option" placeholder="Вариант ответа">
+              <div class="input-group-append">
+                <div class="input-group-text">
+                  <input type="radio" name="correctAnswer" value="1" title="Правильный ответ">
+                </div>
+              </div>
+            </div>
+          </div>
+          <button type="button" class="btn btn-sm btn-secondary" onclick="addAnswerOption()">+ Добавить вариант</button>
+        </div>
+        <div class="form-group" id="textAnswerGroup" style="display: none;">
+          <label>Правильный ответ</label>
+          <input type="text" class="form-control" id="correctTextAnswer" placeholder="Введите правильный ответ">
+        </div>
+        <button type="submit" class="btn btn-primary">Добавить вопрос</button>
+        <button type="button" class="btn btn-danger" onclick="closeModal('addQuestionModal')">Отмена</button>
       </form>
     </div>
   </div>

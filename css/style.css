@@ -1211,3 +1211,21 @@ body {
 .align-items-center {
   align-items: center;
 }
+
+.modal-large {
+  max-width: 800px;
+  width: 95%;
+}
+
+.question-item, .section-item {
+  background: var(--light);
+  border: 1px solid #ddd;
+}
+
+.question-item .card-body, .section-item .card-body {
+  padding: 12px;
+}
+
+.answer-option {
+  flex: 1;
+}
